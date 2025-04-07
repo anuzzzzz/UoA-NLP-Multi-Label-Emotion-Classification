@@ -42,7 +42,10 @@ That means you are fully registered for the task.
 
 # Clone the repository
 
-Clone the repository created by GitHub Classroom to your local machine:
+The GitHub Classroom link for creating your project repository will be 
+provided in a course announcement (and on D2L).
+Once you have created your repository using the provided GitHub Classroom 
+link, clone the repository to your local machine:
 ```
 git clone https://github.com/ml4ai-2025-spring-nn/graduate-project-<your-username>.git
 ```
@@ -52,14 +55,15 @@ You are now ready to begin working on the assignment.
 
 Go to the "Get Started" tab on the CodaBench site, and click on the "Files"
 sub-tab.
-You should see a button to download the training and validation (dev) data for the
-task.
+You should see a button to download the training and validation (info-557-2025spr-PUBLIC-train_dev ; 
+referred to below as just 'dev') data for the task.
 Download and unzip that data into your cloned repository directory.
 
 Please **do NOT commit the data to the repository**.
 
 When the test phase of the competition (Test Phase) begins, you may return to the "Files"
-tab to download the unlabeled test data for the task.
+tab to download the unlabeled test data for the task (info-557-2025spr-PUBLIC-test); this will 
+not be available until the test phase.
 
 # Write your code
 
@@ -68,12 +72,11 @@ CodaBench site.
 Your code should train a model on the provided training data and tune
 hyper-parameters on the provided validation (dev) data.
 Your code should be able to make predictions on either the dev data
-or the test data.
+or (once available) the test data.
 Your code should package up its predictions in a `submission.zip` file,
 following the formatting instructions on CodaBench.
 
-You must create and train your neural network in the Keras framework that we
-have been using in the class.
+You must create and train your neural network in the Keras framework.
 You should train and tune your model using the training and development data
 that you downloaded from the CodaBench site.
 
@@ -91,7 +94,7 @@ During the development phase of the competition, the CodaBench site will expect
 predictions on the dev set.
 To test the performance of your model, run your model on the dev data,
 format your model predictions as instructed on the CodaBench site, and upload
-your model's predictions on the "My Submissions" tab of the CodaBench site.
+your model's predictions (in the `submission.zip` file) on the "My Submissions" tab of the CodaBench site.
 
 During the development phase, you are allowed to upload predictions many times.
 You are **strongly** encouraged to upload your model's dev set
@@ -107,12 +110,16 @@ The instructor will also release the unlabeled test set on CodaBench as
 described above under "Download the Data".
 To test the performance of your model, download the test data, run your model on
 the test data, format your model predictions as instructed on the CodaBench
-site, and upload your model's predictions on the "My Submissions" tab of the
-CodaBench site.
+site, and upload your model's predictions (again, in the `submission.zip` file) 
+on the "My Submissions" tab of the CodaBench site.
 
 During the test phase, you are allowed to upload predictions **only once**.
 This is why it is critical to debug any formatting problems during the
 development phase.
+
+Also be sure to push the final state of your model code to your GitHub 
+repository during this phase. This will constitute your code submission 
+for the project.
  
 # Grading
 
