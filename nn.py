@@ -23,7 +23,7 @@ def to_bow(example):
     return {"input_bow": vector}
 
 
-def train(model_path="model", train_path="train.csv", dev_path="dev.csv"):
+def train(model_path="model.keras", train_path="train.csv", dev_path="dev.csv"):
 
     # load the CSVs into Huggingface datasets to allow use of the tokenizer
     hf_dataset = datasets.load_dataset("csv", data_files={
@@ -79,7 +79,7 @@ def train(model_path="model", train_path="train.csv", dev_path="dev.csv"):
                 save_best_only=True)])
 
 
-def predict(model_path="model", input_path="dev.csv"):
+def predict(model_path="model.keras", input_path="dev.csv"):
 
     # load the saved model
     model = keras.models.load_model(model_path)
@@ -88,7 +88,7 @@ def predict(model_path="model", input_path="dev.csv"):
     # use Pandas here to make assigning labels easier later
     df = pandas.read_csv(input_path)
 
-    # create input features in the same way as in train()
+    # create input_dev features in the same way as in train()
     hf_dataset = datasets.Dataset.from_pandas(df)
     hf_dataset = hf_dataset.map(tokenize, batched=True)
     hf_dataset = hf_dataset.map(to_bow)
