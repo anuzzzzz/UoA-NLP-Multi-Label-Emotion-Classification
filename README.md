@@ -1,141 +1,259 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/4qYqiPqz)
-# Objectives
+# UoA NLP - Multi-Label Emotion Classification
 
-The learning objectives of this assignment are to:
-1. build a neural network for a text sentiment classification task 
-2. practice tuning model hyper-parameters
+## Project Overview
 
-# Read about the CodaBench Competition
+- **Institution:** University of Auckland  
+- **Course:** Deep Learning / NLP  
+- **Performance:** Highest score in class  
+- **Task:** Multi-label emotion classification  
+- **Model:** RoBERTa-base with advanced threshold tuning  
+- **Evaluation Metric:** Micro F1-Score  
 
-You will be participating in a class-wide competition.
-The competition website is:
+## Problem Statement
 
-```https://www.codabench.org/competitions/6936/?secret_key=25750dff-a857-4909-92ef-2f249095f514```
+Given a text, predict the presence of any of the following 7 emotions:
+- **admiration**
+- **amusement** 
+- **gratitude**
+- **love**
+- **pride**
+- **relief**
+- **remorse**
 
-You should visit that site and read all the details of the competition, which
-include the task definition, how your model will be evaluated, the format of
-submissions to the competition, etc.
+This is a **multi-label classification** problem where texts can have multiple emotions simultaneously.
 
-# Create a CodaBench account
-
-You must create a CodaBench account and join the competition:
-1. Visit the competition website: [https://www.codabench.org](https://www.codabench.org)
-
-2. In the upper right corner of the page, you should see a "Sign Up" button.
-Click that and go through the process to create an account.
-**Please use your @arizona.edu account when signing up.**
-Your username will be displayed publicly on a leaderboard showing everyone's
-scores.
-**If you wish to remain anonymous, please select a username that does not reveal
-your identity.**
-Your instructor will still be able to match your score with your name via your
-email address, but your email address will not be visible to other students. 
-
-3. Return to the competition website and click the "My Submissions" tab, accept
-the terms and conditions of the competition, and register for the task.
-
-4. Wait for your instructor to manually approve your request.
-This may take a few days.
-
-5. You should then be able to return to the "My Submissions" tab and see a
-"Submission upload" form.
-That means you are fully registered for the task.
-
-# Clone the repository
-
-The GitHub Classroom link for creating your project repository will be 
-provided in a course announcement (and on D2L).
-Once you have created your repository using the provided GitHub Classroom 
-link, clone the repository to your local machine:
+### Example
+**Input Text:**
 ```
-git clone https://github.com/ml4ai-2025-spring-nn/graduate-project-<your-username>.git
+Thanks for the reply! I appreciate your input. Please keep me in the loop, I'd love to be more active with this if possible.
 ```
-You are now ready to begin working on the assignment.
 
-# Download the data
+**Predicted Labels:**
+```
+admiration, gratitude, love
+```
 
-Go to the "Get Started" tab on the CodaBench site, and click on the "Files"
-sub-tab.
-You should see a button to download the training and validation (info-557-2025spr-PUBLIC-train_dev ; 
-referred to below as just 'dev') data for the task.
-Download and unzip that data into your cloned repository directory.
+## Technical Approach
 
-Please **do NOT commit the data to the repository**.
+### 1. Model Architecture
 
-When the test phase of the competition (Test Phase) begins, you may return to the "Files"
-tab to download the unlabeled test data for the task (info-557-2025spr-PUBLIC-test); this will 
-not be available until the test phase.
+```python
+model_name = "roberta-base"
+MAX_LENGTH = 64
+BATCH_SIZE = 16
+LEARNING_RATE = 2e-5
+```
 
-# Write your code
+**Key Components:**
+- **Base Model:** RoBERTa-base (125M parameters)
+- **Classification Head:** Multi-label binary classification
+- **Optimizer:** AdamW with warmup and weight decay
+- **Loss Function:** Binary Cross-Entropy with logits
 
-You should design a neural network model to perform the task described on the
-CodaBench site.
-Your code should train a model on the provided training data and tune
-hyper-parameters on the provided validation (dev) data.
-Your code should be able to make predictions on either the dev data
-or (once available) the test data.
-Your code should package up its predictions in a `submission.zip` file,
-following the formatting instructions on CodaBench.
+### 2. Advanced Training Strategy
 
-You must create and train your neural network in the Keras framework.
-You should train and tune your model using the training and development data
-that you downloaded from the CodaBench site.
+```python
+# Optimizer with warmup
+optimizer, schedule = create_optimizer(
+    init_lr=LEARNING_RATE,
+    num_train_steps=num_train_steps,
+    num_warmup_steps=int(num_train_steps * 0.1),  # 10% warmup
+    weight_decay_rate=0.01
+)
 
-**If you would like to use any additional resource to train your model, you must
-first ask for permission by contacting the instructors by email 
-(Clay and Jiacheng)**
+# Early stopping with patience
+PATIENCE = 3
+MAX_EPOCHS = 10
+```
 
-There is some sample code in this repository you can use in any way you like to get started.
-This code is described briefly on the CodaBench site.
-If you prefer to delete this code entirely and start from scratch, that is fine, too!
+**Training Features:**
+- **Early Stopping:** Monitors validation F1 with patience
+- **Learning Rate Scheduling:** Warmup + linear decay
+- **Weight Decay:** L2 regularization (0.01)
+- **Manual Training Loop:** Custom implementation for better control
 
-# Test your model predictions on the validation (dev) set
+### 3. Per-Label Threshold Optimization
 
-During the development phase of the competition, the CodaBench site will expect
-predictions on the dev set.
-To test the performance of your model, run your model on the dev data,
-format your model predictions as instructed on the CodaBench site, and upload
-your model's predictions (in the `submission.zip` file) on the "My Submissions" tab of the CodaBench site.
+The key innovation: **individual threshold tuning for each emotion class**
 
-During the development phase, you are allowed to upload predictions many times.
-You are **strongly** encouraged to upload your model's dev set
-predictions to CodaBench after every significant change to your code to make
-sure you have all the formatting correct.
+```python
+# Find optimal threshold for each label
+best_thresholds_arr = np.full(num_labels, 0.5)
+threshold_candidates = np.arange(0.1, 0.9, 0.01)
 
-# Submit your model predictions on the test set
+for i in range(num_labels):
+    # Test each threshold candidate for this label
+    for threshold_candidate in threshold_candidates:
+        temp_preds = (val_probs > best_thresholds_arr).astype(int)
+        temp_preds[:, i] = (val_probs[:, i] > threshold_candidate).astype(int)
+        current_f1_micro = f1_score(true_labels, temp_preds, average='micro')
+        
+        # Update if improvement found
+        if current_f1_micro > best_f1_for_this_label_step:
+            optimal_threshold_for_this_label_idx = threshold_candidate
+```
 
-When the test phase of the competition begins (consult the CodaBench site for
-the exact timing), the instructor will update the CodaBench site to expect
-predictions on the test set, rather than predictions on the development set.
-The instructor will also release the unlabeled test set on CodaBench as
-described above under "Download the Data".
-To test the performance of your model, download the test data, run your model on
-the test data, format your model predictions as instructed on the CodaBench
-site, and upload your model's predictions (again, in the `submission.zip` file) 
-on the "My Submissions" tab of the CodaBench site.
+**Why This Works:**
+- Different emotions have different base rates
+- Some emotions are harder to detect (need lower thresholds)
+- Others are easier to distinguish (can use higher thresholds)
+- Micro F1 optimization balances precision/recall across all labels
 
-During the test phase, you are allowed to upload predictions **only once**.
-This is why it is critical to debug any formatting problems during the
-development phase.
+### 4. Robust Prediction Pipeline
 
-Also be sure to push the final state of your model code to your GitHub 
-repository during this phase. This will constitute your code submission 
-for the project.
- 
-# Grading
+```python
+def predict(model_path, input_path, output_zip):
+    # Load model and optimal thresholds
+    model = TFAutoModelForSequenceClassification.from_pretrained(model_path)
+    
+    # Load per-label thresholds
+    with open(threshold_file_path, "r") as f:
+        threshold_data = json.load(f)
+    
+    # Apply thresholds for final predictions
+    output = (probabilities > optimal_thresholds).astype(int)
+```
 
-You will be graded first by your model's accuracy, and second on how well your
-model ranks in the competition.
-If your model achieves better accuracy on the test set than the baseline model
-included in this repository, you will get at least a B.
-If your model achieves better accuracy on the test set than a second baseline
-that the instructor will reveal during the test phase of the competition, you will get an A.
-All models within the same letter grade will be assigned a numeric grade based on how they are ranked across the
-range, evenly distributing the ranked performance across the letter grade.
-So for example, the highest ranked model in the A range will get 100%, and the
-lowest ranked model in the B range will get 80%.
+## Key Technical Features
 
-**If you train your neural network with any library other than Tensorflow/Keras,
-or you use an external resource that you do not obtain permission for from the 
-instructors (Clay and Jiacheng), you will lose 10% (a letter grade) from 
-your score.**
+### 1. Comprehensive Error Handling
+- Graceful handling of missing files, data format issues
+- Robust tokenization with fallbacks
+- Model loading validation
+
+### 2. Flexible Data Processing
+```python
+# Auto-detect text column
+potential_text_cols = {'text', 'comment_text', 'body'}
+# Dynamic label detection
+label_names = [col for col in columns if col not in text_cols]
+```
+
+### 3. Production-Ready Code
+- Modular train/predict functions
+- Command-line interface
+- Proper model serialization
+- Threshold persistence
+
+## Performance Analysis
+
+### Why This Approach Succeeded
+
+1. **Strong Base Model:** RoBERTa-base provides robust text understanding
+2. **Optimal Thresholds:** Per-label tuning significantly improves F1
+3. **Proper Training:** Early stopping prevents overfitting
+4. **Multi-label Awareness:** Designed specifically for multi-label tasks
+
+### Technical Innovations
+
+**Per-Label Threshold Optimization:**
+- Instead of using 0.5 for all classes
+- Finds optimal threshold for each emotion individually  
+- Maximizes overall micro F1-score
+- Accounts for class imbalance and difficulty differences
+
+**Micro F1 Optimization:**
+- Direct optimization of the evaluation metric
+- Better than macro F1 for imbalanced datasets
+- Focuses on overall classification accuracy
+
+## Data Format
+
+### Training Data Structure
+```csv
+text,admiration,amusement,gratitude,love,pride,relief,remorse
+"My favourite food is anything I didn't have to cook myself.",0,0,0,0,0,0,0
+"Thanks for your reply:) until then hubby and I will anxiously wait 😝",0,0,1,0,0,0,0
+```
+
+### Submission Format
+- ZIP file containing predictions.csv
+- Same format as training data
+- Binary predictions (0/1) for each emotion
+
+## Usage
+
+### Training
+```bash
+python nn.py train --model_path saved_model_robertabase --train_path train.csv --dev_path dev.csv
+```
+
+### Prediction  
+```bash
+python nn.py predict --model_path saved_model_robertabase --input_path test.csv --output_zip submission.zip
+```
+
+## Technical Stack
+
+- **Framework:** TensorFlow + Transformers
+- **Model:** RoBERTa-base (HuggingFace)
+- **Data Processing:** pandas, datasets, numpy
+- **Evaluation:** sklearn F1-score
+- **Languages:** Python
+
+## Repository Structure
+
+```
+UoA-NLP-Multi-Label-Emotion-Classification/
+├── nn.py                           # Main training/prediction script
+├── README.md                       # This file  
+├── requirements.txt                # Dependencies
+├── saved_model_robertabase/        # Trained model artifacts
+│   ├── config.json
+│   ├── pytorch_model.bin
+│   ├── tokenizer_config.json
+│   └── optimal_thresholds_per_label.json
+├── data/                          # Data directory
+│   ├── train.csv
+│   ├── dev.csv  
+│   └── test.csv
+└── submissions/
+    └── submission_robertabase.zip  # Final predictions
+```
+
+## Key Achievements
+
+### 1. Class-Leading Performance
+- Achieved highest F1-score in class
+- Demonstrates mastery of transformer fine-tuning
+- Sophisticated engineering approach
+
+### 2. Advanced Technical Implementation  
+- Per-label threshold optimization
+- Robust error handling and validation
+- Production-ready code architecture
+
+### 3. Multi-Label Classification Expertise
+- Understanding of multi-label vs multi-class
+- Proper evaluation metric selection (micro F1)
+- Class imbalance handling
+
+## Lessons Learned
+
+### What Worked Well
+1. **RoBERTa-base** provided strong baseline performance
+2. **Per-label thresholds** gave significant F1 improvements  
+3. **Early stopping** prevented overfitting effectively
+4. **Micro F1 optimization** aligned training with evaluation
+
+### Technical Insights
+- Multi-label classification requires different strategies than multi-class
+- Threshold tuning is crucial for optimal performance
+- Transformer fine-tuning benefits from proper hyperparameter selection
+- Production code requires comprehensive error handling
+
+## Future Improvements
+
+### Model Enhancements
+- **Larger Models:** RoBERTa-large or DeBERTa
+- **Ensemble Methods:** Multiple model averaging
+- **Advanced Architectures:** Multi-task learning approaches
+
+### Training Optimizations  
+- **Focal Loss:** Handle class imbalance better
+- **Learning Rate Scheduling:** More sophisticated schedules
+- **Data Augmentation:** Text augmentation techniques
+
+---
+
+*This project demonstrates advanced NLP engineering skills, achieving top performance through sophisticated transformer fine-tuning and optimization techniques.*

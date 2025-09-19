@@ -1,0 +1,30 @@
+[
+  {
+    "label": "admiration",
+    "threshold": 0.8899999999999996
+  },
+  {
+    "label": "amusement",
+    "threshold": 0.5
+  },
+  {
+    "label": "gratitude",
+    "threshold": 0.7699999999999997
+  },
+  {
+    "label": "love",
+    "threshold": 0.6199999999999998
+  },
+  {
+    "label": "pride",
+    "threshold": 0.5
+  },
+  {
+    "label": "relief",
+    "threshold": 0.6499999999999997
+  },
+  {
+    "label": "remorse",
+    "threshold": 0.5
+  }
+]
