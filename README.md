@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-- **Institution:** University of Auckland  
+- **Institution:** University of Arizona  
 - **Course:** Deep Learning / NLP  
 - **Performance:** Highest score in class  
 - **Task:** Multi-label emotion classification  
